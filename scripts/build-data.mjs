@@ -60,7 +60,9 @@ const profiles=source=>{
  return unique(result,p=>p.id||p.name+'|'+p.type);
 };
 const conditionName=x=>x.childName||names.get(x.childId)||x.childId||'unknown selection';
-let detachmentMap=new Map(),enhancementMap=new Map();
+let detachmentMap=new Map(),enhancementMap=new Map(),scopedRuleOwnership=new Map();
+const alpha=(a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base',numeric:true});
+const detachmentCost=node=>list(node.costs).find(c=>norm(c.name)==='detachment points')?.value??null;
 const classify=x=>detachmentMap.has(x.childId)?'detachment':enhancementMap.has(x.childId)?'enhancement':
  /associations/i.test(x.field||'')?'character':types.get(x.childId)==='unit'||types.get(x.childId)==='model'?'unit':'selection';
 function term(cond,negative=false){
@@ -125,12 +127,22 @@ function collectRules(source,includeUpgrade=false){
   if(!['unit','model'].includes(n.type)&&!(includeUpgrade&&n===resolve(source)))return;
   for(const raw of [...list(n.rules),...list(n.infoLinks).filter(x=>x.type==='rule'||x.type==='profile')]){
    if(unconditionalHide(raw))continue;
-   const r=resolve(raw);const description=r?.description||(r?.characteristics?Object.values(fields(r)).join('\n'):'');
+   const r=resolve(raw);
+   const sourceIsUnit=['unit','model'].includes(resolve(source)?.type);
+   const owners=sourceIsUnit?scopedRuleOwnership.get(norm(r.name||raw.name))||[]:[];
+   const description=r?.description||(r?.characteristics?Object.values(fields(r)).join('\n'):'')||owners[0]?.description||'';
    if(!description)continue;
    const appendedName=list(raw.modifiers).filter(m=>m.field==='name'&&m.type==='append'&&!m.conditions&&!m.conditionGroups).map(m=>String(m.value)).join(' ');
    const entry={id:r.targetId||r.id,name:appendedName?r.name+' '+appendedName:r.name,description};
    const test=gate(raw,true);
-   if(test.requirements.length)conditional.push({...entry,requirements:test.requirements,conditionText:test.text});
+   if(owners.length){
+    // A shared unit can use a chapter-specific detachment rule, but
+    // that rule must never appear among the unit's inherent abilities.
+    const req=owners.length===1
+     ?[{kind:'detachment',name:owners[0].name,id:owners[0].id,description:'Detachment: '+owners[0].name}]
+     :[{kind:'selection',name:owners.map(x=>x.name).join(' or '),description:'Requires one of these detachments: '+owners.map(x=>x.name).join(', ')}];
+    conditional.push({...entry,requirements:unique([...req,...test.requirements],x=>x.id+'|'+x.description),conditionText:[req[0].description,test.text].filter(Boolean).join(' AND ')});
+   }else if(test.requirements.length)conditional.push({...entry,requirements:test.requirements,conditionText:test.text});
    else if(raw.type!=='profile')rules.push(entry); // Always-on shared profile links render under profiles.
   }
  });
@@ -395,12 +407,70 @@ function detachmentEntries(root){
  for(const child of children(root))seek(child);
  return unique(found,x=>x.id);
 }
+
+// BSData models chapter-specific detachments in the common Space Marine
+// catalogue and hides them outside their designated primary catalogue.
+// Evaluate only predicates determined by the primary-catalogue ID; unresolved
+// roster-based conditions are intentionally left unevaluated.
+function primaryCatalogueCondition(cond,primaryId){
+ if(!cond || typeof cond!=='object')return null;
+ if(cond.childId && cond.scope==='primary-catalogue' && cond.field==='selections'){
+  if(cond.type==='notInstanceOf')return cond.childId!==primaryId;
+  if(cond.type==='instanceOf')return cond.childId===primaryId;
+  return null;
+ }
+ const terms=[...list(cond.conditions),...list(cond.conditionGroups)].map(x=>primaryCatalogueCondition(x,primaryId));
+ if(!terms.length)return null;
+ const mode=norm(cond.type)==='or'?'or':'and';
+ if(mode==='or'){
+  if(terms.includes(true))return true;
+  if(terms.every(x=>x===false))return false;
+  return null;
+ }
+ if(terms.includes(false))return false;
+ if(terms.every(x=>x===true))return true;
+ return null;
+}
+function allowedInCatalogue(node,primaryId){
+ if(node.hidden===true)return false;
+ for(const mod of list(node.modifiers)){
+  if(mod.field!=='hidden'||mod.type!=='set'||String(mod.value)!=='true')continue;
+  const predicates=[...list(mod.conditions),...list(mod.conditionGroups)];
+  if(!predicates.length)return false;
+  const result=primaryCatalogueCondition({type:'and',conditions:predicates},primaryId);
+  if(result===true)return false;
+ }
+ return true;
+}
+function linkedCatalogueRoots(root){
+ const roots=[root];
+ for(const link of list(root.catalogueLinks)){
+  if(!link.importRootEntries)continue;
+  const source=docs.find(d=>d.root.id===link.targetId);
+  if(source)roots.push(source.root);
+ }
+ return roots;
+}
+
 const factionData=[];
 for(const doc of docs){
  if(doc.system||doc.root.library)continue;
  const root=doc.root;
- const detNodes=detachmentEntries(root);
+ const detNodes=unique(linkedCatalogueRoots(root).flatMap(x=>detachmentEntries(x))
+  .filter(x=>allowedInCatalogue(x,root.id)),x=>x.id);
  detachmentMap=new Map(detNodes.map(x=>[x.id,x.name]));
+ scopedRuleOwnership=new Map();
+ for(const det of detNodes){
+  for(const raw of [...list(det.rules),...list(det.infoLinks).filter(x=>x.type==='rule')]){
+   const rule=resolve(raw);
+   const description=rule?.description||(rule?.characteristics?Object.values(fields(rule)).join('\n'):'');
+   if(!rule?.name||!description||/^new rule$/i.test(rule.name))continue;
+   const key=norm(rule.name);
+   const owners=scopedRuleOwnership.get(key)||[];
+   if(!owners.some(x=>x.id===det.id))owners.push({id:det.id,name:det.name,description});
+   scopedRuleOwnership.set(key,owners);
+  }
+ }
  const enhancementNodes=[];
  for(const group of list(root.sharedSelectionEntryGroups).filter(g=>/^enhancements?$/i.test(g.name||'')))
   enhancementNodes.push(...list(group.selectionEntries),...list(group.entryLinks));
@@ -472,13 +542,19 @@ for(const doc of docs){
  const detachments=detNodes.map(node=>{
   const x=readEntry(node,{enhance:true});
   x.rules=collectRules(node,true).rules;
+  x.detachmentCost=detachmentCost(node);
   x.enhancements=allEnhancements.filter(e=>e.detachment?.id===node.id);
   x.stratagems=collectStratagems(node); // Only verified structured WHEN/TARGET/EFFECT cards.
   return x;
  });
- const armyRules=unique([...list(root.sharedRules),...list(root.rules),...list(root.sharedProfiles)].map(r=>({
-   id:r.id,name:r.name,description:r.characteristics?Object.values(fields(r)).join('\n'):r.description||''
- })).filter(r=>r.description),x=>norm(x.name));
+ // The sharedProfiles collection contains unit, weapon and chapter abilities.
+ // Only explicit faction-rule definitions belong in the Faction Rules index.
+ // Rules owned by individual detachments are excluded here and remain
+ // accessible on their detachment pages.
+ const armyRules=unique([...list(root.sharedRules),...list(root.rules),
+   ...list(root.infoLinks).filter(x=>x.type==='rule').map(resolve)].map(r=>({
+   id:r.targetId||r.id,name:r.name,description:r.characteristics?Object.values(fields(r)).join('\n'):r.description||''
+ })).filter(r=>r.description&&!scopedRuleOwnership.has(norm(r.name))),x=>norm(x.name)).sort(alpha);
  const allRules=[...list(system.sharedRules).map(r=>({name:r.name,alias:list(r.alias)})),...armyRules];
  const matches=name=>{
   const q=norm(name).replace(/[[\]]/g,'');
@@ -526,6 +602,6 @@ for(const doc of docs){
  console.log(root.name+': '+units.length+' datasheets, '+detachments.length+' detachments, '+allEnhancements.length+' enhancements');
 }
 const core=unique([...list(system.sharedRules),...list(system.sharedProfiles)].map(x=>({id:x.id,name:x.name,description:x.characteristics?Object.values(fields(x)).join('\n'):x.description||'',aliases:list(x.alias)})).filter(x=>x.description),x=>norm(x.name));
-fs.writeFileSync(path.join(output,'core.json'),JSON.stringify({name:system.name,rules:core,revision:system.revision,complete:false}));
+fs.writeFileSync(path.join(output,'core.json'),JSON.stringify({name:system.name,rules:core.sort(alpha),revision:system.revision,complete:false}));
 fs.writeFileSync(path.join(output,'index.json'),JSON.stringify({edition:11,updated:new Date().toISOString(),source:'BSData/wh40k-11e',factions:factionData.sort((a,b)=>a.name.localeCompare(b.name))}));
 console.log('Imported '+factionData.length+' factions');
