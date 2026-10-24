@@ -26,6 +26,12 @@ assert(fnp?.requirements?.some(r=>/Technomancer/.test(r.description)),'Technoman
 assert(!immortal.categories.some(c=>c==='Immortals'),'Unit-specific category leaked into public keywords');
 assert(warrior.loadouts.some(x=>x.variants.some(v=>/gauss reaper/i.test(v.name))&&x.variants.some(v=>/gauss flayer/i.test(v.name))),'Warrior model loadouts missing');
 assert(overlord.weaponChoices.some(g=>g.max===1&&g.options.length>=2),'Overlord exclusive weapon loadouts missing');
+assert(overlord.optionalGear.some(g=>g.name==='Resurrection orb'&&g.notes.some(note=>/Tachyon arrow/.test(note))),
+  'Overlord optional Resurrection orb / Tachyon arrow restriction missing');
+assert(warrior.conditionalRules.some(r=>r.name==='Assault'&&r.requirements.some(req=>/Hand of the Dynasty/.test(req.description))),
+  'Hand of the Dynasty conditional Assault grant missing');
+assert(warrior.enhancements.some(e=>e.name==='Enlivened Sentinels'&&e.detachment?.name==='Hand of the Dynasty'),
+  'Unit-specific enhancement detachment attribution missing');
 assert(necrons.references['Power Matrix']?.some(ref=>ref.kind==='detachment'&&ref.id===court.id),'Reverse references to detachment missing');
 assert(necrons.units.some(u=>/\[Legends\]/i.test(u.name)),'Legends catalogue entries missing');
 const marines=get('imperium-space-marines.json');
