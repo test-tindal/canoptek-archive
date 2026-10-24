@@ -555,7 +555,8 @@ for(const doc of docs){
    ...list(root.infoLinks).filter(x=>x.type==='rule').map(resolve)].map(r=>({
    id:r.targetId||r.id,name:r.name,description:r.characteristics?Object.values(fields(r)).join('\n'):r.description||''
  })).filter(r=>r.description&&!scopedRuleOwnership.has(norm(r.name))),x=>norm(x.name)).sort(alpha);
- const allRules=[...list(system.sharedRules).map(r=>({name:r.name,alias:list(r.alias)})),...armyRules];
+ const allRules=unique([...list(system.sharedRules).map(r=>({name:r.name,alias:list(r.alias)})),...armyRules,
+  ...detachments.flatMap(d=>[...d.rules,...d.conditionalRules])],x=>norm(x.name));
  const matches=name=>{
   const q=norm(name).replace(/[[\]]/g,'');
   return allRules.filter(r=>[r.name,...(r.alias||[])].some(a=>{
