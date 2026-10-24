@@ -11,6 +11,8 @@ const overlord=necrons.units.find(u=>u.name==='Overlord');
 assert(warrior&&immortal&&overlord,'Necron reference units missing');
 assert(immortal.leaders?.some(u=>u.name==='Overlord'),'Immortals missing Overlord leader association');
 assert(immortal.supporters?.length>0,'Immortals missing Support associations');
+assert(warrior.leaders?.some(u=>u.name==='Overlord'),'Necron Warriors missing Overlord leader');
+assert(warrior.supporters?.some(u=>u.name==='Technomancer'),'Necron Warriors missing Technomancer support');
 assert(necrons.detachments.length>=10,'Nested detachments were not extracted: '+necrons.detachments.length);
 const court=necrons.detachments.find(d=>d.name==='Canoptek Court');
 assert(court,'Canoptek Court missing');
