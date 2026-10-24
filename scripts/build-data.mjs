@@ -543,33 +543,32 @@ for(const doc of docs){
   return data;
  }),x=>norm(x.name)).sort((a,b)=>a.name.localeCompare(b.name));
 
- // Resolve BSData Leading / Supporting associations to local faction datasheets.
- // Association conditions contain eligible target selection IDs; unrelated roster
- // restrictions are deliberately excluded.
- const unitById=new Map(units.map(u=>[u.id,u]));
- const unitByName=new Map(units.map(u=>[norm(u.name),u]));
- const eligibleTargets=assoc=>{
-  const matched=[];
-  const visit=tree=>{
-   if(!tree||typeof tree!=='object')return;
-   if(tree.childId&&tree.field==='selections'&&['instanceOf','equalTo'].includes(tree.type)&&Number(tree.value)===1){
-    const target=unitById.get(tree.childId)||unitByName.get(norm(tree.childName||names.get(tree.childId)));
-    if(target)matched.push(target);
-   }
-   for(const x of [...list(tree.conditions),...list(tree.conditionGroups)])visit(x);
-  };
-  for(const x of [...list(assoc.conditions),...list(assoc.conditionGroups)])visit(x);
-  return unique(matched,x=>x.id);
+ // BSData encodes Leader and Support eligibility in ability-profile descriptions.
+ const clean=s=>String(s||'').toLowerCase().replace(/\^\^|\*\*/g,'').replace(/\u00a0/g,' ').replace(/[^a-z0-9]+/g,' ').trim();
+ const possibleTargets=units.map(unit=>({unit,label:clean(unit.name)}));
+ const walkAbilityProfiles=(node,found=[],depth=0,seen=new Set())=>{
+  if(!node||depth>12)return found;
+  const n=resolve(node),id=n.targetId||n.id;
+  if(id&&seen.has(id))return found;
+  const next=new Set(seen);if(id)next.add(id);
+  for(const p of list(n.profiles))if(/^(leader|support)$/i.test(p.name||''))found.push(p);
+  for(const group of list(n.infoGroups))walkAbilityProfiles(group,found,depth+1,next);
+  for(const child of children(n))walkAbilityProfiles(child,found,depth+1,next);
+  return found;
  };
  for(const raw of candidate){
-  const node=resolve(raw),actor=unitById.get(node.id)||unitByName.get(norm(node.name));
+  const node=resolve(raw);
+  const actor=units.find(u=>u.id===node.id)||units.find(u=>norm(u.name)===norm(node.name));
   if(!actor)continue;
-  for(const assoc of list(node.associations)){
-   const kind=/^leading$/i.test(assoc.name||'')?'leaders':/^support(ing)?$/i.test(assoc.name||'')?'supporters':null;
-   if(!kind)continue;
-   for(const target of eligibleTargets(assoc)){
-    if(target.id===actor.id)continue;
-    (target[kind]??=[]).push({id:actor.id,name:actor.name});
+  for(const profile of walkAbilityProfiles(node)){
+   const kind=/^leader$/i.test(profile.name)?'leaders':'supporters';
+   const description=Object.values(fields(profile)).join('\n');
+   const eligible=description.match(/this model can be attached to the following units?:([\s\S]*?)(?=you can attach|if this|when this|\n\n|$)/i)?.[1]||'';
+   const haystack=' '+clean(eligible)+' ';
+   for(const {unit:target,label} of possibleTargets){
+    if(target.id!==actor.id&&label&&haystack.includes(' '+label+' ')){
+     (target[kind]??=[]).push({id:actor.id,name:actor.name});
+    }
    }
   }
  }
