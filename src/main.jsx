@@ -65,7 +65,7 @@ function App(){
    return(ai<0?999:ai)-(bi<0?999:bi);
   });
  },[filtered]);
- const browse=section==='units'?filtered:section==='detachments'?data?.detachments||[]:
+ const browse=section==='units'?filtered:section==='detachments'?[...(data?.detachments||[])].sort((a,b)=>{const ap=Number(a.detachmentCost),bp=Number(b.detachmentCost);const aValid=a.detachmentCost!=null&&Number.isFinite(ap),bValid=b.detachmentCost!=null&&Number.isFinite(bp);if(aValid!==bValid)return aValid?-1:1;if(aValid&&ap!==bp)return bp-ap;return a.name.localeCompare(b.name,'en',{sensitivity:'base',numeric:true});}):
   section==='rules'?[...(data?.rules||[])].sort(ruleNameSort):[...coreRules].sort(ruleNameSort);
  const activeBrowse=browse.filter(x=>x.name.toLowerCase().includes(query.toLowerCase()));
  const current=section==='units'?visibleUnits.find(x=>x.id===selected):section==='detachments'?data?.detachments.find(x=>x.id===selected):null;
