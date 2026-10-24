@@ -24,7 +24,7 @@ assert(overlord.profiles.some(p=>p.name==='My Will Be Done'),'Overlord linked ab
 assert(necrons.units.find(u=>u.name==="C'tan Shard of the Deceiver")?.profiles.some(p=>p.name==='Necrodermis'),
   'Ctan linked Necrodermis ability profile missing');
 assert(!immortal.rules.some(r=>/^(precise|precision|assault|power matrix)$/i.test(r.name)),'Unrelated rule leaked into Immortals');
-const fnp=immortal.conditionalRules.find(r=>r.name==='Feel No Pain');
+const fnp=immortal.conditionalRules.find(r=>r.name==='Feel No Pain 5+');
 assert(fnp?.requirements?.some(r=>/Technomancer/.test(r.description)),'Technomancer requirement missing for Feel No Pain');
 assert(!immortal.categories.some(c=>c==='Immortals'),'Unit-specific category leaked into public keywords');
 assert(warrior.loadouts.some(x=>x.variants.some(v=>/gauss reaper/i.test(v.name))&&x.variants.some(v=>/gauss flayer/i.test(v.name))),'Warrior model loadouts missing');
