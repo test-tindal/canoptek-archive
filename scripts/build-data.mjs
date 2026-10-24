@@ -403,7 +403,22 @@ for(const doc of docs){
  const enhancementNodes=[];
  for(const group of list(root.sharedSelectionEntryGroups).filter(g=>/^enhancements?$/i.test(g.name||'')))
   enhancementNodes.push(...list(group.selectionEntries),...list(group.entryLinks));
- enhancementMap=new Map(enhancementNodes.map(e=>[e.id,e.name]));
+ // Unit-specific enhancement groups are also valid sources of grant conditions.
+ const localEnhancementNodes=[];
+ const scanEnhancements=(raw,depth=0,seen=new Set())=>{
+  if(!raw||depth>13)return;
+  const n=resolve(raw),id=n.targetId||n.id;
+  if(id&&seen.has(id))return;
+  const next=new Set(seen);if(id)next.add(id);
+  if(/^enhancements?$/i.test(n.name||'')){
+   localEnhancementNodes.push(...list(n.selectionEntries),...list(n.entryLinks));
+   return;
+  }
+  if(/^(crusade|weapon modifications?|weapon upgrades?)$/i.test(n.name||''))return;
+  for(const child of children(n))scanEnhancements(child,depth+1,next);
+ };
+ for(const raw of [...list(root.sharedSelectionEntries),...list(root.selectionEntries)])scanEnhancements(raw);
+ enhancementMap=new Map([...enhancementNodes,...localEnhancementNodes].map(e=>[e.id,e.name]));
  const detachmentByName=new Map(detNodes.map(x=>[norm(x.name).replace(/^the[ ]+/,''),x.id]));
  function enhancement(source,inherited=''){
   const n=resolve(source),base=readEntry(n,{enhance:true});
