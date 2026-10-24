@@ -364,11 +364,11 @@ for(const doc of docs){
  for(const group of list(root.sharedSelectionEntryGroups).filter(g=>/^enhancements?$/i.test(g.name||'')))
   enhancementNodes.push(...list(group.selectionEntries),...list(group.entryLinks));
  enhancementMap=new Map(enhancementNodes.map(e=>[e.id,e.name]));
- const detachmentByName=new Map(detNodes.map(x=>[norm(x.name).replace(/^the\\s+/,''),x.id]));
+ const detachmentByName=new Map(detNodes.map(x=>[norm(x.name).replace(/^the[ ]+/,''),x.id]));
  function enhancement(source,inherited=''){
   const n=resolve(source),base=readEntry(n,{enhance:true});
   const stated=n.comment?.trim()||inherited;
-  let detachment=detachmentByName.get(norm(stated).replace(/^the\\s+/,'')) ? {id:detachmentByName.get(norm(stated).replace(/^the\\s+/,'')),name:detachmentMap.get(detachmentByName.get(norm(stated).replace(/^the\\s+/,'')))}:null;
+  let detachment=detachmentByName.get(norm(stated).replace(/^the[ ]+/,'')) ? {id:detachmentByName.get(norm(stated).replace(/^the[ ]+/,'')),name:detachmentMap.get(detachmentByName.get(norm(stated).replace(/^the[ ]+/,'')))}:null;
   if(!detachment){
    const idsInGate=gate(n,true).requirements.filter(x=>x.kind==='detachment');
    if(idsInGate.length===1)detachment={id:idsInGate[0].id,name:idsInGate[0].name};
