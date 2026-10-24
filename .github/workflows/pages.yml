@@ -30,6 +30,7 @@ jobs:
       - run: npm install --no-audit --no-fund
       - run: npm run data -- upstream public/data
       - run: node scripts/check-data.mjs public/data
+      - run: node scripts/check-format.mjs
       - run: npm run build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
