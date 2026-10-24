@@ -38,6 +38,29 @@ assert(warrior.enhancements.some(e=>e.name==='Enlivened Sentinels'&&e.detachment
 assert(necrons.references['Power Matrix']?.some(ref=>ref.kind==='detachment'&&ref.id===court.id),'Reverse references to detachment missing');
 assert(necrons.units.some(u=>/\[Legends\]/i.test(u.name)),'Legends catalogue entries missing');
 const marines=get('imperium-space-marines.json');
+const templars=get('imperium-black-templars.json');
+const darkAngels=get('imperium-dark-angels.json');
+const templarDet=templars.detachments.find(d=>d.name==='Vow-Sworn Crusaders');
+assert(templarDet,'Vow-Sworn Crusaders missing from Black Templars');
+assert(templarDet.rules.some(r=>r.name==='Templar Vows'),'Templar Vows missing from its detachment');
+assert(templarDet.detachmentCost===2,'Vow-Sworn Crusaders detachment cost missing');
+assert(!marines.detachments.some(d=>d.name==='Vow-Sworn Crusaders'),'Black Templars detachment leaked into generic Space Marines');
+assert(!marines.detachments.some(d=>d.name==='Inner Circle Task Force'),'Dark Angels detachment leaked into generic Space Marines');
+assert(darkAngels.detachments.some(d=>d.name==='Inner Circle Task Force'),'Dark Angels chapter detachment missing');
+assert(!marines.rules.some(r=>r.name==='Templar Vows'||r.name==='Death to the Alien'),'Chapter/unit abilities leaked into faction rules');
+assert(!necrons.rules.some(r=>r.name==='Power Matrix'),'Canoptek Court rule leaked into faction-wide rules');
+assert(necrons.rules.some(r=>r.name==='Reanimation Protocols'),'Necrons faction rule missing');
+assert(necrons.detachments.find(d=>d.name==='Canoptek Court').detachmentCost===2,'Necron detachment cost missing');
+const intercessors=marines.units.find(u=>u.name==='Intercessor Squad');
+assert(intercessors&&!intercessors.rules.some(r=>r.name==='Templar Vows'),'Black Templar vow leaked into generic Intercessors');
+const templarIntercessors=templars.units.find(u=>u.name==='Intercessor Squad');
+assert(templarIntercessors?.conditionalRules.some(r=>r.name==='Templar Vows'&&
+ r.requirements.some(req=>req.kind==='detachment'&&req.name==='Vow-Sworn Crusaders')),
+ 'Black Templars Intercessors must label their detachment-specific Vow');
+for(const rules of [core.rules,necrons.rules,marines.rules,templars.rules]){
+ const sorted=[...rules].sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base',numeric:true}));
+ assert.deepEqual(rules.map(x=>x.name),sorted.map(x=>x.name),'Faction and core rules must be alphabetic');
+}
 const redemptor=marines.units.find(u=>u.name==='Redemptor Dreadnought');
 assert(redemptor,'Redemptor Dreadnought missing');
 const plasma=redemptor.weapons.find(w=>/macro plasma incinerator/i.test(w.name));
