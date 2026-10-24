@@ -1,4 +1,5 @@
-import React,{useId,useState} from 'react';
+import React,{useEffect,useId,useRef,useState} from 'react';
+import{formatRuleMarkdown}from'./ruleFormatting.mjs';
 import{createPortal}from'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -15,7 +16,7 @@ export function lookupKeyword(value,coreRules=[]){
  return entries.find(x=>word===x.alias||word.startsWith(x.alias+' ')||(x.alias==='anti'&&word.startsWith('anti-')))?.rule||null;
 }
 export function RuleText({text,coreRules=[]}){
- const value=String(text??'').replace(/\^\^([^^\n]+)\^\^/g,'$1');
+ const value=formatRuleMarkdown(text);
  return <div className="rich-text"><ReactMarkdown remarkPlugins={[remarkGfm,remarkBreaks]} components={{
    a:({href,children})=><a href={href} target="_blank" rel="noreferrer">{children}</a>,
    strong:({children})=>{
@@ -68,7 +69,7 @@ export function WeaponSection({weapons,coreRules,open}){
     const fieldNames=['Range','A','BS','WS','S','AP','D','Keywords'];
     const columns=fieldNames.filter(k=>w.modes.some(m=>Object.hasOwn(m.fields,k)));
     return <article key={w.id+'-'+i} className={'weapon-card '+(multi?'multi-mode':'')}>
-     <div className="weapon-title"><span className="weapon-glyph" aria-hidden="true">⚔</span><strong>{w.name}</strong>
+     <div className="weapon-title"><span className="weapon-glyph" aria-hidden="true">{/ranged/i.test(type)?'🏹':'⚔'}</span><strong>{w.name}</strong>
        {multi&&<span className="mode-badge">SELECT ONE PROFILE</span>}</div>
      <div className="table-wrap"><table className="weapon-table"><thead><tr>{multi&&<th>MODE</th>}{columns.map(x=><th key={x}>{x}</th>)}</tr></thead>
        <tbody>{w.modes.map((m,j)=><tr key={m.id||j}>{multi&&<td className="mode-label">{normalizeMode(m.name)}</td>}{columns.map(col=><td key={col}>{col==='Keywords'?<KeywordValue value={m.fields[col]} coreRules={coreRules} open={open}/>:<RuleText text={String(m.fields[col]||'-')}/>}</td>)}</tr>)}</tbody>
@@ -166,12 +167,47 @@ export function LoadoutSection({choices=[],loadouts=[],optionalGear=[],navigate}
  </div>)}
  </section>;
 }
+function RelatedKeywordTag({tag,related,navigate}){
+ const [popup,setPopup]=useState(null);
+ const closeTimer=useRef(null);
+ useEffect(()=>()=>clearTimeout(closeTimer.current),[]);
+ const keepOpen=()=>{if(closeTimer.current){clearTimeout(closeTimer.current);closeTimer.current=null;}};
+ const closeSoon=()=>{keepOpen();closeTimer.current=setTimeout(()=>setPopup(null),170);};
+ const show=e=>{
+  keepOpen();
+  const rect=e.currentTarget.getBoundingClientRect();
+  const viewportWidth=window.innerWidth,viewportHeight=window.innerHeight;
+  const maxRows=Math.max(5,Math.floor((Math.min(490,viewportHeight*.66)-64)/24));
+  const maxCols=Math.max(1,Math.min(4,Math.floor((viewportWidth-24)/164)));
+  const columns=Math.min(maxCols,Math.max(1,Math.ceil(related.length/maxRows)));
+  const rows=Math.max(1,Math.ceil(related.length/columns));
+  const width=Math.min(viewportWidth-24,Math.max(250,columns*168+30));
+  const estimatedHeight=Math.min(viewportHeight*.72,Math.max(95,70+rows*25));
+  const left=Math.max(12,Math.min(rect.left,viewportWidth-width-12));
+  const top=viewportHeight-rect.bottom>estimatedHeight+10?rect.bottom+7:Math.max(12,rect.top-estimatedHeight-7);
+  setPopup({left,top,width,rows,columns});
+ };
+ return <span className="tag-wrap">
+   <button type="button" className="tag tag-button" title={tag} onMouseEnter={show}
+     onMouseLeave={closeSoon} onFocus={show} onBlur={closeSoon} onClick={show}>{tag}</button>
+   {popup&&createPortal(<div className="tag-popover tag-popover-floating" style={{left:popup.left,top:popup.top,width:popup.width}}
+     onMouseEnter={keepOpen} onMouseLeave={closeSoon} role="region" aria-label={'Other '+tag+' datasheets'}>
+     <strong>{tag} · {related.length} other {related.length===1?'datasheet':'datasheets'}</strong>
+     {related.length?<div className="tag-popover-list" style={{
+       gridTemplateColumns:'repeat('+popup.columns+',minmax(0,1fr))',
+       gridTemplateRows:'repeat('+popup.rows+',minmax(22px,auto))'
+     }}>{related.map(u=><button key={u.id} type="button" onClick={()=>{
+       keepOpen();setPopup(null);navigate('unit',u.id);
+     }}>{u.name}</button>)}</div>:<p>No other datasheets with this keyword.</p>}
+   </div>,document.body)}
+ </span>;
+}
 export function Tags({tags=[],points,units=[],current,showLegends,navigate}){
  return <div className="tagline">{tags.map((tag,i)=>{
-  const related=units.filter(u=>u.id!==current&&(showLegends||!/\[Legends\]/i.test(u.name))&&u.categories?.some(c=>norm(c)===norm(tag)));
-  return <span className="tag-wrap" key={i}><button className="tag tag-button" type="button" title={tag}>{tag}</button>
-    <div className="tag-popover"><strong>{tag} · {related.length} other datasheets</strong>{related.length?<div className="tag-popover-list">{related.map(u=><button key={u.id} type="button" onClick={()=>navigate('unit',u.id)}>{u.name}</button>)}</div>:<p>No other datasheets with this keyword.</p>}</div>
-   </span>;
+  const related=units.filter(u=>u.id!==current&&(showLegends||!/\[Legends\]/i.test(u.name))&&
+   u.categories?.some(c=>norm(c)===norm(tag)))
+   .sort((a,b)=>a.name.localeCompare(b.name,'en',{sensitivity:'base'}));
+  return <RelatedKeywordTag tag={tag} related={related} navigate={navigate} key={tag+'-'+i}/>;
  })}{points!=null&&<span className="tag points">{points} PTS</span>}</div>;
 }
 export function ConditionDetails({items=[]}){
