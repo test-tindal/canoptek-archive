@@ -6,6 +6,8 @@ import{ruleNameSort}from'./ruleFormatting.mjs';
 import './style.css';
 
 const base=import.meta.env.BASE_URL+'data/';
+const dataVersion=import.meta.env.VITE_DATA_VERSION||'development';
+const dataUrl=name=>base+name+'.json?v='+encodeURIComponent(dataVersion);
 const source='https://github.com/BSData/wh40k-11e/blob/main/';
 const images=name=>'https://www.google.com/search?tbm=isch&q='+encodeURIComponent('Warhammer 40000 '+name+' miniature');
 const unitGroups=['Epic Hero','Character','Battleline','Infantry','Mounted','Beast','Monster','Vehicle','Walker','Aircraft','Dedicated Transport','Fortification'];
@@ -21,16 +23,16 @@ function App(){
  const[loading,setLoading]=useState(false),[error,setError]=useState('');
  useEffect(()=>{document.documentElement.dataset.theme=theme;localStorage.setItem('archive-theme',theme)},[theme]);
  useEffect(()=>{
-  fetch(base+'index.json').then(r=>{if(!r.ok)throw Error('Data index unavailable');return r.json()})
+  fetch(dataUrl('index'),{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Data index unavailable');return r.json()})
    .then(d=>{setIndex(d);const hash=decodeURIComponent(location.hash.slice(1)).split('/');setFaction(d.factions.find(x=>x.slug===hash[0])?.slug||d.factions.find(x=>/necron/i.test(x.name))?.slug||d.factions[0]?.slug||'')})
    .catch(e=>setError(e.message));
-  fetch(base+'core.json').then(r=>r.json()).then(setCore).catch(()=>{});
+  fetch(dataUrl('core'),{cache:'no-store'}).then(r=>r.json()).then(setCore).catch(()=>{});
  },[]);
  useEffect(()=>{
   if(!faction)return;
   let disposed=false;
   setLoading(true);setError('');
-  fetch(base+faction+'.json').then(r=>{if(!r.ok)throw Error('Faction catalogue unavailable');return r.json()})
+  fetch(dataUrl(faction),{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('Faction catalogue unavailable');return r.json()})
    .then(d=>{
     if(disposed)return;
     setData(d);setQuery('');setExpanded({});
