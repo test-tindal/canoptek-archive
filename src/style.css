@@ -112,3 +112,70 @@
 .condition-expression>summary{cursor:pointer;color:var(--accent)}
 .condition-expression p{padding:8px;margin:0}
 @media(max-width:800px){.variant-grid{grid-template-columns:1fr}.requirement-inline{flex-direction:column;gap:4px}.weapon-table{min-width:600px}.tag-popover{left:auto;right:0}.mode-badge{font-size:.55rem}}
+
+
+/* Archive navigation and the dynastic ankh. */
+.brand-home{
+  display:flex;width:100%;box-sizing:border-box;text-align:left;
+  background:transparent;color:inherit;cursor:pointer;
+  border:0;border-bottom:1px solid var(--edge);
+  padding:0 0 32px;
+}
+.brand-home:hover strong,.brand-home:focus-visible strong{color:var(--accent)}
+.brand-wordmark{display:block;min-width:0}
+.brand-home .sigil.ankh{
+  display:inline-flex;align-items:center;justify-content:center;flex:0 0 56px;
+  width:56px;height:61px;line-height:1;font-size:3.3rem;
+  font-family:'Segoe UI Symbol','Noto Sans Symbols 2',serif;
+  color:var(--accent2);border:1px solid var(--edge);
+  background:radial-gradient(ellipse at 50% 40%,var(--panel2),var(--sidebar));
+  box-shadow:inset 0 0 14px var(--shadow),0 0 13px var(--shadow);
+  text-shadow:0 0 12px var(--accent),0 0 26px var(--accent);
+}
+.brand-home:hover .ankh,.brand-home:focus-visible .ankh{
+  border-color:var(--accent);text-shadow:0 0 17px var(--accent),0 0 31px var(--accent);
+}
+.breadcrumb-home{
+  display:inline;border:0;background:transparent;padding:0;
+  color:var(--accent);font:inherit;letter-spacing:inherit;cursor:pointer;
+}
+.breadcrumb-home:hover,.breadcrumb-home:focus-visible{text-decoration:underline;text-underline-offset:3px}
+
+/* Multiple compact columns, sized to avoid the old single scrolling column. */
+.tag-popover.tag-popover-floating{
+  display:block;position:fixed;z-index:90;
+  top:auto;right:auto;bottom:auto;
+  min-width:0;max-width:calc(100vw - 24px);
+  box-sizing:border-box;padding:11px 13px;
+  background:var(--panel);color:var(--text);
+  border:1px solid var(--accent);box-shadow:0 15px 35px #000a;
+}
+.tag-popover-floating>strong{
+  font-size:.69rem;letter-spacing:.035em;margin-bottom:7px;padding-bottom:7px;
+}
+.tag-popover-floating .tag-popover-list{
+  display:grid;grid-auto-flow:column;align-content:start;gap:0 11px;
+  max-height:min(60vh,460px);overflow-y:auto;overflow-x:hidden;
+}
+.tag-popover-floating .tag-popover-list button{
+  display:block;min-width:0;max-width:100%;overflow-wrap:anywhere;
+  font-size:.70rem;font-weight:500;line-height:1.2;
+  padding:4px 2px;min-height:22px;
+}
+.tag-popover-floating p{font-size:.70rem}
+
+/* Keep following paragraphs visually separate from Markdown lists. */
+.rich-text ul,.rich-text ol{margin:.5em 0 1em;padding-left:1.4em}
+.rich-text ul+p,.rich-text ol+p{margin-top:.9em}
+.rich-text li>p{display:block}
+.weapon-glyph{
+  display:inline-flex;align-items:center;justify-content:center;
+  flex:0 0 28px;width:28px;min-height:26px;
+  font-family:'Segoe UI Emoji','Segoe UI Symbol',sans-serif;
+  font-size:1.45rem;line-height:1;
+}
+@media(max-width:750px){
+  .brand-home{padding-bottom:10px}
+  .brand-home .sigil.ankh{height:43px;width:43px;flex-basis:43px;font-size:2.55rem}
+  .tag-popover-floating .tag-popover-list button{font-size:.68rem}
+}
