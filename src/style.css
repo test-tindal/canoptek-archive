@@ -31,3 +31,84 @@
 .floating-keyword .rich-text{line-height:1.4}
 .conditional-rules>.stack{margin:15px 0}
 .conditional-rules .conditions{margin:6px 0}
+
+
+/* Datasheet cross-references, equipment and provenance */
+.section-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:32px 0 15px;padding-bottom:11px;border-bottom:1px solid var(--edge);color:var(--accent2)}
+.section-heading span{font:600 .72rem 'Rajdhani',sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.weapon-section{margin-bottom:28px}
+.weapon-type>h3{margin:21px 0 10px;padding-left:12px;border-left:3px solid var(--accent);color:var(--accent);font:700 .82rem 'Rajdhani',sans-serif;text-transform:uppercase;letter-spacing:.15em}
+.weapon-card{margin-bottom:13px;border:1px solid var(--edge);background:var(--panel);position:relative}
+.weapon-card::before{position:absolute;content:'';left:-1px;top:-1px;width:20px;border-top:3px solid var(--accent)}
+.weapon-title{display:flex;align-items:center;gap:11px;padding:10px 15px;border-bottom:1px solid var(--edge);background:var(--panel2)}
+.weapon-glyph{font-size:1.6rem;color:var(--accent);line-height:1}
+.weapon-title strong{color:var(--accent2);font-size:1rem;letter-spacing:.035em}
+.mode-badge{margin-left:auto;border:1px solid var(--accent);padding:3px 8px;color:var(--accent);font-size:.65rem;letter-spacing:.09em;white-space:nowrap}
+.weapon-table{min-width:520px;width:100%}
+.weapon-table th{padding:9px 11px;font-size:.69rem}
+.weapon-table td{padding:10px 11px;vertical-align:middle;line-height:1.3;font-size:.87rem}
+.weapon-table tr+tr{border-top:1px solid var(--edge)}
+.weapon-table .mode-label{font-weight:700;color:var(--accent);white-space:nowrap}
+.weapon-table td:last-child{min-width:145px;max-width:320px}
+.weapon-keyword-btn{border:0;border-bottom:1px dotted var(--accent);background:transparent;color:var(--accent2);padding:0 1px;line-height:1.4;text-align:left;font-weight:700;font-size:.83rem;cursor:help}
+.weapon-keyword-btn:hover,.weapon-keyword-btn:focus-visible{color:var(--accent)}
+.tooltip-foot{margin-top:12px;border-top:1px solid var(--edge);padding-top:8px;font-size:.67rem;letter-spacing:.12em;color:var(--muted)}
+.legends-check{display:flex;align-items:center;gap:9px;margin:-4px 0 16px;color:var(--text);font-weight:600;cursor:pointer;font-size:.83rem;letter-spacing:.015em}
+.legends-check input{accent-color:var(--accent);width:15px;height:15px;cursor:pointer}
+.legends-check small{color:var(--muted);font-weight:400}
+.tag-wrap{position:relative;display:inline-flex}
+.tag-button{background:var(--panel);cursor:help}
+.tag-button:hover,.tag-button:focus-visible{color:var(--accent);border-color:var(--accent)}
+.tag-popover{position:absolute;display:none;z-index:12;top:calc(100% + 7px);left:0;min-width:250px;width:min(330px,75vw);padding:12px 14px;background:var(--panel);border:1px solid var(--accent);box-shadow:0 12px 30px #0008;color:var(--text)}
+.tag-wrap:hover .tag-popover,.tag-wrap:focus-within .tag-popover{display:block}
+.tag-popover>strong{display:block;color:var(--accent2);font-size:.76rem;letter-spacing:.03em;margin-bottom:9px;padding-bottom:8px;border-bottom:1px solid var(--edge)}
+.tag-popover-list{max-height:220px;overflow:auto;display:flex;flex-direction:column}
+.tag-popover-list button{background:transparent;border:0;text-align:left;color:var(--text);padding:6px 3px;line-height:1.2}
+.tag-popover-list button:hover{color:var(--accent)}
+.tag-popover p{margin:0;font-size:.79rem;color:var(--muted)}
+.requirement-inline{display:flex;align-items:flex-start;gap:10px;margin-top:13px;padding:11px 13px;border-left:3px solid var(--accent);background:var(--panel2);font-size:.84rem;line-height:1.43}
+.requirement-inline>b{color:var(--accent2);white-space:nowrap}
+.requirement-inline p{margin:0 0 5px}
+.requirement-inline p:last-child{margin-bottom:0}
+.text-link{padding:0;border:0;background:transparent;color:var(--accent);text-align:left;text-decoration:underline;text-underline-offset:3px;cursor:pointer;display:inline;line-height:inherit}
+.text-link:hover{color:var(--accent2)}
+.rule-refs{margin-top:12px;border-top:1px solid var(--edge);padding-top:9px;font-size:.78rem;color:var(--muted)}
+.rule-refs summary{cursor:pointer;font-weight:700;color:var(--accent);letter-spacing:.02em}
+.rule-refs summary:hover{color:var(--accent2)}
+.rule-refs .minor{color:var(--muted);font-size:.72rem;font-weight:400}
+.ref-group{margin:12px 0}
+.ref-group>b{display:block;color:var(--accent2);font-size:.78rem;margin-bottom:7px}
+.ref-links{display:flex;flex-wrap:wrap;gap:6px}
+.ref-link{background:var(--panel2);border:1px solid var(--edge);padding:5px 8px;color:var(--text);text-align:left;line-height:1.2}
+.ref-link:hover{border-color:var(--accent);color:var(--accent)}
+.ref-link small{color:var(--muted)}
+.conditional-card{margin:14px 0}
+.conditional-card .rule-title{margin-bottom:9px}
+.count-indicator{font:600 .8rem 'Rajdhani',sans-serif;color:var(--muted);margin-left:8px}
+.enhancement-row{padding:16px 0 19px;border-top:1px solid var(--edge);scroll-margin-top:100px}
+.enhancement-head{display:flex;gap:11px;align-items:center;margin-bottom:8px}
+.enhancement-head>strong{color:var(--accent2);font-size:1.03rem;letter-spacing:.02em}
+.enhancement-head>span{color:var(--accent);margin-left:auto}
+.enhancement-head .icon{margin-left:8px}
+.enhancement-detachment{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:.83rem;color:var(--muted);margin:6px 0 10px}
+.enhancement-detachment .text-link{display:inline-flex;align-items:center;gap:4px}
+.loadout-block{margin:14px 0 20px;border:1px solid var(--edge);background:var(--panel2)}
+.choice-heading{padding:10px 13px;border-bottom:1px solid var(--edge);display:flex;align-items:center;flex-wrap:wrap;gap:7px 16px;justify-content:space-between}
+.choice-heading>strong{color:var(--accent2)}
+.choice-heading>small{color:var(--accent);font-size:.74rem}
+.variant-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(240px,100%),1fr));gap:10px;padding:12px}
+.variant{border:1px solid var(--edge);background:var(--panel);padding:13px}
+.variant>strong{display:block;color:var(--accent2);line-height:1.25}
+.variant-gear{font-size:.83rem;margin-top:8px;color:var(--muted)}
+.variant .requirement-inline{display:block;padding:8px;margin-top:10px}
+.variant .requirement-inline>b{display:block;margin-bottom:5px}
+.variant p.minor{font-size:.75rem;color:var(--muted);margin:8px 0 0}
+.default-pill{font-size:.6rem;color:var(--accent);margin-left:7px;border:1px solid var(--edge);padding:1px 4px;white-space:nowrap;vertical-align:middle}
+.stratagem-card{padding:15px 20px;border:1px solid var(--edge);background:var(--panel);margin:14px 0}
+.stratagem-card>div{display:flex;align-items:flex-start;gap:8px;padding-top:8px}
+.stratagem-card>div b{color:var(--accent);font-size:.82rem}
+.stratagem-card>div .rich-text{flex:1}
+.condition-expression{margin-top:10px;font-size:.75rem;color:var(--muted)}
+.condition-expression>summary{cursor:pointer;color:var(--accent)}
+.condition-expression p{padding:8px;margin:0}
+@media(max-width:800px){.variant-grid{grid-template-columns:1fr}.requirement-inline{flex-direction:column;gap:4px}.weapon-table{min-width:600px}.tag-popover{left:auto;right:0}.mode-badge{font-size:.55rem}}
