@@ -20,6 +20,9 @@ assert(av.enhancements.find(e=>e.name==='Veil of Darkness').detachment.id===av.i
 assert(immortal.weapons.some(w=>w.name==='Gauss blaster'),'Immortals Gauss blaster missing');
 assert(immortal.weapons.some(w=>w.name==='Tesla carbine'),'Immortals Tesla carbine missing');
 assert(immortal.rules.some(r=>r.name==='Reanimation Protocols'),'Immortals Reanimation Protocols missing');
+assert(overlord.profiles.some(p=>p.name==='My Will Be Done'),'Overlord linked ability profile missing');
+assert(necrons.units.find(u=>u.name==="C'tan Shard of the Deceiver")?.profiles.some(p=>p.name==='Necrodermis'),
+  'Ctan linked Necrodermis ability profile missing');
 assert(!immortal.rules.some(r=>/^(precise|precision|assault|power matrix)$/i.test(r.name)),'Unrelated rule leaked into Immortals');
 const fnp=immortal.conditionalRules.find(r=>r.name==='Feel No Pain');
 assert(fnp?.requirements?.some(r=>/Technomancer/.test(r.description)),'Technomancer requirement missing for Feel No Pain');
