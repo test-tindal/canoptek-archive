@@ -478,7 +478,18 @@ for(const doc of docs){
   const text=enh.description||'';
   for(const token of text.match(/\[[^\]]+\]/g)||[])add(token,{kind:'enhancement',id:enh.id,name:enh.name,detachmentId:enh.detachment?.id||null});
  }
- const references=Object.fromEntries(Object.entries(refMap).map(([name,refs])=>[name,unique(refs,x=>x.kind+'|'+x.id+'|'+(x.detail||''))]));
+ const references=Object.fromEntries(Object.entries(refMap).map(([name,refs])=>{
+  const dedup=new Map();
+  for(const ref of refs){
+   const key=ref.kind+'|'+ref.id;
+   if(!dedup.has(key))dedup.set(key,{...ref,detail:''});
+   if(ref.detail){
+    const prev=dedup.get(key).detail.split('; ').filter(Boolean);
+    if(!prev.includes(ref.detail))dedup.get(key).detail=[...prev,ref.detail].join('; ');
+   }
+  }
+  return [name,[...dedup.values()]];
+ }));
  const result={name:root.name,sourceFile:doc.file,revision:root.revision,units,detachments,enhancements:allEnhancements,rules:armyRules,references};
  fs.writeFileSync(path.join(output,slug(doc.file)+'.json'),JSON.stringify(result));
  factionData.push({slug:slug(doc.file),name:root.name,units:units.length,detachments:detachments.length});
