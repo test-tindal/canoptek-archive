@@ -171,9 +171,9 @@
 .weapon-glyph{
   display:inline-flex;align-items:center;justify-content:center;
   flex:0 0 28px;width:28px;min-height:26px;
-  font-family:'Segoe UI Emoji','Segoe UI Symbol',sans-serif;
-  font-size:1.45rem;line-height:1;
+  line-height:1;
 }
+.weapon-glyph svg{display:block;stroke:currentColor;flex-shrink:0;}
 @media(max-width:750px){
   .brand-home{padding-bottom:10px}
   .brand-home .sigil.ankh{height:43px;width:43px;flex-basis:43px;font-size:2.55rem}
