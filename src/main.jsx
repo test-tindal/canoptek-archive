@@ -124,7 +124,7 @@ function App(){
    {(unit.leaders?.length>0||unit.supporters?.length>0)&&<section className="panel"><h3>Unit associations</h3>
     {unit.leaders?.length>0&&<div className="association-group"><h4>Can lead this unit</h4><div className="association-links">{unit.leaders.map(x=><button type="button" className="text-link" key={x.id} onClick={()=>navigate('unit',x.id)}>{x.name} <ExternalLink size={12}/></button>)}</div></div>}
     {unit.supporters?.length>0&&<div className="association-group"><h4>Can support this unit</h4><div className="association-links">{unit.supporters.map(x=><button type="button" className="text-link" key={x.id} onClick={()=>navigate('unit',x.id)}>{x.name} <ExternalLink size={12}/></button>)}</div></div>}
-   </section>
+   </section>}
   </>;
  }
  function DetachmentView({item}){
