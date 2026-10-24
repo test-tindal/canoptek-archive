@@ -127,7 +127,8 @@ function collectRules(source,includeUpgrade=false){
    if(unconditionalHide(raw))continue;
    const r=resolve(raw);const description=r?.description||(r?.characteristics?Object.values(fields(r)).join('\n'):'');
    if(!description)continue;
-   const entry={id:r.targetId||r.id,name:r.name,description};
+   const appendedName=list(raw.modifiers).filter(m=>m.field==='name'&&m.type==='append'&&!m.conditions&&!m.conditionGroups).map(m=>String(m.value)).join(' ');
+   const entry={id:r.targetId||r.id,name:appendedName?r.name+' '+appendedName:r.name,description};
    const test=gate(raw,true);
    if(test.requirements.length)conditional.push({...entry,requirements:test.requirements,conditionText:test.text});
    else if(raw.type!=='profile')rules.push(entry); // Always-on shared profile links render under profiles.
