@@ -82,7 +82,7 @@ export function Requirements({items=[],navigate,prefix='Requires'}){
   <b>{prefix}:</b>
   <div>{items.map((r,i)=><p key={(r.id||i)+'-'+i}>
     {(r.kind==='detachment'||r.kind==='character'||r.kind==='unit'||r.kind==='enhancement')&&navigate?
-      <button className="text-link" type="button" title={'Open '+r.name} onClick={()=>navigate(r.kind,r.id)}>{r.description}</button>:r.description}
+      <button className="text-link" type="button" title={'Open '+r.name} onClick={()=>navigate(r.kind,r.id,r.name)}>{r.description}</button>:r.description}
   </p>)}</div>
  </div>;
 }
