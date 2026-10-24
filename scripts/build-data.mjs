@@ -533,7 +533,7 @@ for(const doc of docs){
   visit(raw);
   return unique(results,x=>norm(x.name));
  }
- const units=unique(candidate.map(resolve).filter(x=>['unit','model'].includes(x.type)&&!x.hidden&&!/^(show|detachment|order of battle)/i.test(x.name||'')).map(x=>{
+ const units=unique(candidate.map(resolve).filter(x=>['unit','model'].includes(x.type)&&allowedInCatalogue(x,root.id)&&!/^(show|detachment|order of battle)/i.test(x.name||'')).map(x=>{
   const data=readEntry(x);
   data.enhancements=unitEnhancements(x);
   return data;
