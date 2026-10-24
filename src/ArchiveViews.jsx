@@ -139,8 +139,8 @@ export function EnhancementSection({items=[],coreRules,navigate,open}){
    {e.requirements?.length>0&&<Requirements items={e.requirements.filter(x=>!(e.detachment&&x.id===e.detachment.id))} navigate={navigate}/>}
   </article>)}</section>;
 }
-export function LoadoutSection({choices=[],loadouts=[],navigate}){
- if(!choices.length&&!loadouts.length)return null;
+export function LoadoutSection({choices=[],loadouts=[],optionalGear=[],navigate}){
+ if(!choices.length&&!loadouts.length&&!optionalGear.length)return null;
  return <section className="panel"><h3>Weapon options and model loadouts</h3><p className="muted">Source selection limits determine which equipment can be chosen together. This is a reference to permitted choices.</p>
  {loadouts.map((group,i)=><div className="loadout-block" key={group.id||i}>
    <div className="choice-heading"><strong>{group.name}</strong><small>{group.min?group.min+' minimum':''}{group.max?' · '+group.max+' maximum':''} models across these configurations</small></div>
@@ -149,6 +149,13 @@ export function LoadoutSection({choices=[],loadouts=[],navigate}){
     <Requirements items={v.requirements} navigate={navigate}/>{v.conditions.map((x,k)=><p className="minor" key={k}>{x}</p>)}
    </div>)}</div>
  </div>)}
+ {optionalGear.length>0&&<div className="loadout-block optional-gear">
+  <div className="choice-heading"><strong>Optional wargear</strong><small>Individual upgrades and their restrictions</small></div>
+  <div className="variant-grid">{optionalGear.map((o,i)=><div className="variant" key={o.id||i}>
+   <strong>{o.name}</strong><div className="variant-gear">{o.model&&o.model+' · '}{o.weapons.length?o.weapons.join(' · '):'Wargear upgrade'}{o.max!=null?' · Up to '+o.max:''}</div>
+   <Requirements items={o.requirements} navigate={navigate}/>{o.notes.map((x,j)=><p key={j} className="minor">{x}</p>)}
+  </div>)}</div>
+ </div>}
  {choices.map((group,i)=><div className="loadout-block" key={group.id||i}>
   <div className="choice-heading"><strong>{group.model?group.model+' / ':''}{group.name}</strong><small>{group.min===1?'Choose exactly one':'Choose up to one'} (mutually exclusive)</small></div>
   <div className="variant-grid">{group.options.map((v,j)=><div className="variant" key={j}>
