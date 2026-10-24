@@ -1,34 +1,48 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-
 const dir=process.argv[2]||'public/data';
-const read=file=>JSON.parse(fs.readFileSync(path.join(dir,file),'utf8'));
-const index=read('index.json');
-assert(index.factions.length>=20,'Expected faction catalogues');
-const necrons=read('necrons.json');
+const get=p=>JSON.parse(fs.readFileSync(path.join(dir,p),'utf8'));
+const index=get('index.json'),necrons=get('necrons.json'),core=get('core.json');
+assert(index.factions.length>=20,'Too few factions');
+const warrior=necrons.units.find(u=>u.name==='Necron Warriors');
 const immortal=necrons.units.find(u=>u.name==='Immortals');
-assert(immortal,'Immortals datasheet missing');
-assert(immortal.profiles.some(p=>p.name==='Gauss blaster'),'Immortals Gauss blaster missing');
-assert(immortal.profiles.some(p=>p.name==='Tesla carbine'),'Immortals Tesla carbine missing');
-assert(immortal.rules.some(r=>r.name==='Reanimation Protocols'),'Faction ability link missing');
-assert(!immortal.rules.some(r=>/^(precise|precision|lance|assault|power matrix)$/i.test(r.name)),
-  'Shared/weapon/detachment rule leaked into base Immortals abilities: '+immortal.rules.map(x=>x.name).join(', '));
-assert(!immortal.profiles.some(p=>/^(tools of dominion|weapon modifications)$/i.test(p.name)),
-  'Optional enhancement/weapon upgrade leaked into the base datasheet');
-assert((immortal.conditionalRules||[]).some(r=>r.name==='Feel No Pain'),
-  'Conditional character-granted rule was lost');
-const core=read('core.json');
-assert(core.rules.some(r=>r.name==='Assault' && r.description.includes('**[ASSAULT]**')),
-  'Core ability definitions and Markdown markup missing');
-assert(core.rules.some(r=>r.name==='Lance' && r.description.includes('**[LANCE]**')),
-  'Lance definition missing');
+const overlord=necrons.units.find(u=>u.name==='Overlord');
+assert(warrior&&immortal&&overlord,'Necron reference units missing');
+assert(necrons.detachments.length>=10,'Nested detachments were not extracted: '+necrons.detachments.length);
+const court=necrons.detachments.find(d=>d.name==='Canoptek Court');
+assert(court,'Canoptek Court missing');
+assert(court.rules.some(r=>r.name==='Power Matrix'),'Detachment rule was not imported');
+assert(court.enhancements.some(e=>e.name==='Dimensional Sanctum'),'Detachment-specific enhancement missing');
+const av=necrons.detachments.find(d=>d.name==='Awakened Dynasty');
+assert(av?.enhancements.some(e=>e.name==='Veil of Darkness'),'Awakened Dynasty enhancements missing');
+assert(av.enhancements.find(e=>e.name==='Veil of Darkness').detachment.id===av.id,'Enhancement detachment attribution missing');
+assert(immortal.weapons.some(w=>w.name==='Gauss blaster'),'Immortals Gauss blaster missing');
+assert(immortal.weapons.some(w=>w.name==='Tesla carbine'),'Immortals Tesla carbine missing');
+assert(immortal.rules.some(r=>r.name==='Reanimation Protocols'),'Immortals Reanimation Protocols missing');
+assert(!immortal.rules.some(r=>/^(precise|precision|assault|power matrix)$/i.test(r.name)),'Unrelated rule leaked into Immortals');
+const fnp=immortal.conditionalRules.find(r=>r.name==='Feel No Pain');
+assert(fnp?.requirements?.some(r=>/Technomancer/.test(r.description)),'Technomancer requirement missing for Feel No Pain');
+assert(!immortal.categories.some(c=>c==='Immortals'),'Unit-specific category leaked into public keywords');
+assert(warrior.loadouts.some(x=>x.variants.some(v=>/gauss reaper/i.test(v.name))&&x.variants.some(v=>/gauss flayer/i.test(v.name))),'Warrior model loadouts missing');
+assert(overlord.weaponChoices.some(g=>g.max===1&&g.options.length>=2),'Overlord exclusive weapon loadouts missing');
+assert(necrons.references['Power Matrix']?.some(ref=>ref.kind==='detachment'&&ref.id===court.id),'Reverse references to detachment missing');
+assert(necrons.units.some(u=>/\[Legends\]/i.test(u.name)),'Legends catalogue entries missing');
+const marines=get('imperium-space-marines.json');
+const redemptor=marines.units.find(u=>u.name==='Redemptor Dreadnought');
+assert(redemptor,'Redemptor Dreadnought missing');
+const plasma=redemptor.weapons.find(w=>/macro plasma incinerator/i.test(w.name));
+assert(plasma?.modes.some(m=>/standard/i.test(m.name))&&plasma.modes.some(m=>/supercharge/i.test(m.name)),
+  'Macro Plasma Incinerator Standard/Supercharge modes were not grouped');
+assert(redemptor.weaponChoices.some(g=>g.options.some(o=>/Macro Plasma Incinerator/i.test(o.name))),'Redemptor weapon XOR option missing');
+assert(core.rules.some(r=>r.name==='Assault'&&r.description.includes('**[ASSAULT]**')),'Assault definition missing');
+assert(core.rules.some(r=>r.name==='Lance'&&r.description.includes('**[LANCE]**')),'Lance Markdown definition missing');
 for(const faction of index.factions){
-  const data=read(faction.slug+'.json');
-  assert(Array.isArray(data.units) && Array.isArray(data.rules),'Malformed faction '+faction.slug);
-  for(const unit of data.units){
-    assert(!unit.profiles.some(p=>/^weapon modifications$/i.test(p.name)),
-      'Generic upgrades leaked into '+faction.slug+' / '+unit.name);
-  }
+ const data=get(faction.slug+'.json');
+ assert(Array.isArray(data.units)&&Array.isArray(data.detachments)&&Array.isArray(data.references),'Malformed '+faction.slug);
+ for(const u of data.units){
+  assert(!(u.profiles||[]).some(p=>/Weapons?$/.test(p.type)),'Weapon incorrectly classified as ability: '+faction.slug+' '+u.name);
+  assert(!(u.weapons||[]).some(w=>/weapon modifications/i.test(w.name)),'Crusade modifications leaked into weapons');
+ }
 }
-console.log('Data checks passed: '+index.factions.length+' factions; Immortals ownership, weapon profiles, conditional rules and keyword definitions verified.');
+console.log('PASS: '+index.factions.length+' factions; detachments, enhancements, conditional requirements, reverse references, legends, weapon modes, loadouts');
