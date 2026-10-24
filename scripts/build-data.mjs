@@ -123,13 +123,14 @@ function collectRules(source,includeUpgrade=false){
  const rules=[],conditional=[];
  ownedWalk(source,n=>{
   if(!['unit','model'].includes(n.type)&&!(includeUpgrade&&n===resolve(source)))return;
-  for(const raw of [...list(n.rules),...list(n.infoLinks).filter(x=>x.type==='rule')]){
+  for(const raw of [...list(n.rules),...list(n.infoLinks).filter(x=>x.type==='rule'||x.type==='profile')]){
    if(unconditionalHide(raw))continue;
-   const r=resolve(raw);if(!r?.description)continue;
-   const entry={id:r.targetId||r.id,name:r.name,description:r.description};
+   const r=resolve(raw);const description=r?.description||(r?.characteristics?Object.values(fields(r)).join('\n'):'');
+   if(!description)continue;
+   const entry={id:r.targetId||r.id,name:r.name,description};
    const test=gate(raw,true);
    if(test.requirements.length)conditional.push({...entry,requirements:test.requirements,conditionText:test.text});
-   else rules.push(entry);
+   else if(raw.type!=='profile')rules.push(entry); // Always-on shared profile links render under profiles.
   }
  });
  return {rules:unique(rules,x=>x.name),conditionalRules:unique(conditional,x=>x.name+'|'+x.conditionText)};
@@ -148,7 +149,19 @@ function unitCategories(n){
 function statGroup(n){
  const costs=list(n.costs);return costs.find(x=>/^(pts|points)$/i.test(x.name||''))?.value??null;
 }
-function nonweaponProfiles(n){return profiles(n).filter(p=>!/weapons?/i.test(p.type));}
+function nonweaponProfiles(n){
+ const found=profiles(n).filter(p=>!/weapons?/i.test(p.type));
+ ownedWalk(n,item=>{
+  if(!['unit','model'].includes(item.type))return;
+  for(const link of list(item.infoLinks).filter(x=>x.type==='profile')){
+   if(unconditionalHide(link)||gate(link,true).requirements.length)continue;
+   const p=resolve(link);
+   if(p.characteristics&&!/weapons?/i.test(p.typeName||''))
+    found.push({id:p.targetId||p.id,name:p.name,type:p.typeName||'Abilities',fields:fields(p)});
+  }
+ });
+ return unique(found,p=>p.id||p.name);
+}
 const WEAPON=/weapons?/i;
 function parseMode(name,owner){
  let trimmed=String(name||'').replace(/^\s*[➤►→]\s*/,'').trim();
@@ -468,6 +481,7 @@ for(const doc of docs){
  for(const unit of units){
   const ref={kind:'unit',id:unit.id,name:unit.name};
   for(const rule of [...unit.rules,...unit.conditionalRules])add(rule.name,ref);
+  for(const profile of unit.profiles)add(profile.name,ref);
   for(const effect of unit.conditionalEffects)for(const word of effect.name.match(/\b(?:Assault|Rapid Fire|Sustained Hits|Lethal Hits|Deep Strike|Fights First|Stealth)\b/gi)||[])add(word,{...ref,detail:'Conditional modification'});
   for(const weapon of unit.weapons)for(const mode of weapon.modes)
     for(const keyword of String(mode.fields.Keywords||'').split(/,\s*/).filter(Boolean))add(keyword,{...ref,detail:weapon.name});
