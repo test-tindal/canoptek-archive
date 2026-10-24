@@ -68,7 +68,7 @@ export function WeaponSection({weapons,coreRules,open}){
     const fieldNames=['Range','A','BS','WS','S','AP','D','Keywords'];
     const columns=fieldNames.filter(k=>w.modes.some(m=>Object.hasOwn(m.fields,k)));
     return <article key={w.id+'-'+i} className={'weapon-card '+(multi?'multi-mode':'')}>
-     <div className="weapon-title"><span className="weapon-glyph">⌁</span><strong>{w.name}</strong>
+     <div className="weapon-title"><span className="weapon-glyph" aria-hidden="true">⚔</span><strong>{w.name}</strong>
        {multi&&<span className="mode-badge">SELECT ONE PROFILE</span>}</div>
      <div className="table-wrap"><table className="weapon-table"><thead><tr>{multi&&<th>MODE</th>}{columns.map(x=><th key={x}>{x}</th>)}</tr></thead>
        <tbody>{w.modes.map((m,j)=><tr key={m.id||j}>{multi&&<td className="mode-label">{normalizeMode(m.name)}</td>}{columns.map(col=><td key={col}>{col==='Keywords'?<KeywordValue value={m.fields[col]} coreRules={coreRules} open={open}/>:<RuleText text={String(m.fields[col]||'-')}/>}</td>)}</tr>)}</tbody>
