@@ -226,10 +226,63 @@ function modNotes(item){
  for(const m of list(item.modifiers)){
   if(m.type==='set'&&Number(m.value)===0&&constr.has(m.field)){
    const cond=gate({modifiers:[m]}).requirements;
-   if(cond.length)result.push('Availability changes when '+cond.map(x=>x.name).join(', ')+' is selected.');
+   if(cond.length)result.push('Unavailable when '+cond.map(x=>x.name).join(', ')+' is selected.');
   }
  }
  return unique(result,x=>x);
+}
+
+function optionalGear(source){
+ const found=[];
+ // Wargear additions have their own optional constraints, unlike
+ // mutually exclusive weapon groups which are already represented elsewhere.
+ const visit=(raw,depth=0,seen=new Set(),model='')=>{
+  if(!raw||depth>10)return;
+  const n=resolve(raw),id=n.targetId||n.id;
+  if(depth&&excluded.test(n.name||''))return;
+  if(id&&seen.has(id))return;
+  const next=new Set(seen);if(id)next.add(id);
+  const currentModel=n.type==='model'?n.name:model;
+  if(/^wargear$/i.test(n.name||'')){
+   for(const rawOption of [...list(n.selectionEntries),...list(n.entryLinks)]){
+    const option=resolve(rawOption);
+    if(option.type==='selectionEntryGroup')continue;
+    const lim=list(option.constraints).filter(c=>c.field==='selections');
+    const min=lim.find(c=>c.type==='min')?.value??0,max=lim.find(c=>c.type==='max')?.value??null;
+    if(min>0||max===0)continue;
+    const owned=enumerateOwnedWeaponNames(option);
+    found.push({id:option.id,name:option.name,model:currentModel,weapons:owned,
+      max,requirements:gate(option,true).requirements,notes:modNotes(option)});
+   }
+  }
+  for(const child of children(n))visit(child,depth+1,next,currentModel);
+ };
+ visit(source);
+ return unique(found,x=>x.id);
+}
+function extraConditionalRules(source){
+ const result=[];
+ ownedWalk(source,n=>{
+  for(const g of list(n.modifierGroups)){
+   const req=expression(g);
+   if(!req.requirements.length)continue;
+   for(const m of list(g.modifiers)){
+    if(m.field!=='add-info')continue;
+    const linked=ids.get(String(m.value));
+    if(!linked?.description)continue;
+    result.push({id:linked.id,name:linked.name,description:linked.description,
+      requirements:req.requirements,conditionText:req.text});
+   }
+  }
+  for(const m of list(n.modifiers)){
+   if(m.field!=='add-info')continue;
+   const req=expression(m);if(!req.requirements.length)continue;
+   const linked=ids.get(String(m.value));if(!linked?.description)continue;
+   result.push({id:linked.id,name:linked.name,description:linked.description,
+     requirements:req.requirements,conditionText:req.text});
+  }
+ });
+ return unique(result,x=>x.name+'|'+x.conditionText);
 }
 function interpretModifier(mod){
  const value=String(mod.value??'');
@@ -267,11 +320,11 @@ function readEntry(source,{enhance=false}={}){
  const node=resolve(source),associated=collectRules(node,true),cho=chooseGroups(node);
  return {
   id:node.id,name:node.name,profiles:nonweaponProfiles(node),weapons:enhance?[]:allWeapons(node),
-  rules:associated.rules,conditionalRules:associated.conditionalRules,
+  rules:associated.rules,conditionalRules:enhance?associated.conditionalRules:unique([...associated.conditionalRules,...extraConditionalRules(node)],x=>x.name+'|'+x.conditionText),
   conditions:[],requirements:gate(node,true).requirements,
   conditionText:gate(node,true).text,conditionalEffects:enhance?[]:conditionalEffects(node),
   categories:unitCategories(node),points:statGroup(node),
-  weaponChoices:enhance?[]:cho.choices,loadouts:enhance?[]:cho.loadouts,
+  weaponChoices:enhance?[]:cho.choices,loadouts:enhance?[]:cho.loadouts,optionalGear:enhance?[]:optionalGear(node),
   enhancements:[]
  };
 }
