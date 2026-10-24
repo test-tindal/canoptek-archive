@@ -2,6 +2,7 @@ import React,{useEffect,useMemo,useState}from'react';
 import{createRoot}from'react-dom/client';
 import{Search,Sun,Moon,BookOpen,Layers,ScrollText,ChevronDown,ChevronRight,ExternalLink,Image as ImageIcon,Copy}from'lucide-react';
 import{anchorId,RuleCards,RuleText,Profiles,WeaponSection,ConditionalRules,ConditionalEffects,EnhancementSection,LoadoutSection,Tags,RuleModal}from'./ArchiveViews.jsx';
+import{ruleNameSort}from'./ruleFormatting.mjs';
 import './style.css';
 
 const base=import.meta.env.BASE_URL+'data/';
@@ -64,7 +65,8 @@ function App(){
    return(ai<0?999:ai)-(bi<0?999:bi);
   });
  },[filtered]);
- const browse=section==='units'?filtered:section==='detachments'?data?.detachments||[]:section==='rules'?data?.rules||[]:coreRules;
+ const browse=section==='units'?filtered:section==='detachments'?data?.detachments||[]:
+  section==='rules'?[...(data?.rules||[])].sort(ruleNameSort):[...coreRules].sort(ruleNameSort);
  const activeBrowse=browse.filter(x=>x.name.toLowerCase().includes(query.toLowerCase()));
  const current=section==='units'?visibleUnits.find(x=>x.id===selected):section==='detachments'?data?.detachments.find(x=>x.id===selected):null;
  const choose=id=>{
@@ -123,25 +125,26 @@ function App(){
  }
  function DetachmentView({item}){
   return <>
-   <div className="heading"><div className="eyebrow">DETACHMENT · 11TH EDITION</div><h1>{item.name}</h1></div>
+   <div className="heading"><div className="eyebrow">DETACHMENT · 11TH EDITION</div><h1>{item.name}{item.detachmentCost!=null?' ['+item.detachmentCost+' DP]':''}</h1></div>
    <Profiles items={item.profiles||[]} coreRules={coreRules}/>
    <section className="panel"><h3>Detachment rules</h3>
     <RuleCards items={item.rules||[]} coreRules={coreRules} references={data.references||{}} navigate={navigate} showLegends={showLegends}/>
    </section>
    <EnhancementSection items={item.enhancements||[]} coreRules={coreRules} navigate={navigate} open={open}/>
-   <section className="panel"><h3>Stratagems</h3>
-    {item.stratagems?.length?item.stratagems.map((s,i)=><article className="stratagem-card" key={s.id||i}>
-      <h3>{s.name}</h3><div><b>WHEN:</b> <RuleText text={s.when} coreRules={coreRules}/></div>
-      <div><b>TARGET:</b> <RuleText text={s.target} coreRules={coreRules}/></div>
-      <div><b>EFFECT:</b> <RuleText text={s.effect} coreRules={coreRules}/></div>
-      {s.restrictions&&<div><b>RESTRICTIONS:</b> <RuleText text={s.restrictions} coreRules={coreRules}/></div>}
-     </article>):<p className="empty">The current BSData catalogue does not provide verified stratagem cards for this detachment. WHEN, TARGET, EFFECT and RESTRICTIONS will appear here if added to the source.</p>}
-   </section>
+   {item.stratagems?.length>0&&<section className="panel"><h3>Stratagems</h3>
+    {item.stratagems.map((stratagem,i)=><article className="stratagem-card" key={stratagem.id||i}>
+     <h3>{stratagem.name}</h3>
+     <div><b>WHEN:</b> <RuleText text={stratagem.when} coreRules={coreRules}/></div>
+     <div><b>TARGET:</b> <RuleText text={stratagem.target} coreRules={coreRules}/></div>
+     <div><b>EFFECT:</b> <RuleText text={stratagem.effect} coreRules={coreRules}/></div>
+     {stratagem.restrictions&&<div><b>RESTRICTIONS:</b> <RuleText text={stratagem.restrictions} coreRules={coreRules}/></div>}
+    </article>)}
+   </section>}
   </>;
  }
  return <div className="app">
   <aside className="sidebar">
-   <div className="brand"><div className="sigil">◇</div><div><strong>CANOPTEK<br/>ARCHIVE</strong><small>DYNASTIC RECORDS · XI</small></div></div>
+   <button type="button" className="brand brand-home" onClick={()=>chooseSection('units')} title="Return to the current faction's archive home"><span className="sigil ankh" aria-hidden="true">☥</span><span className="brand-wordmark"><strong>CANOPTEK<br/>ARCHIVE</strong><small>DYNASTIC RECORDS · XI</small></span></button>
    <div className="side-title">ARCHIVE INDEX</div>
    <label className="select-label">FACTION<select value={faction} onChange={e=>setFaction(e.target.value)}>
     {index?.factions.map(x=><option key={x.slug} value={x.slug}>{x.name}</option>)}
@@ -155,7 +158,7 @@ function App(){
    <div className="side-footer">SOURCE: BSDATA / WH40K-11E<br/>UNOFFICIAL RULES INDEX</div>
   </aside>
   <main>
-   <header className="topbar"><div className="breadcrumb">ARCHIVE / {data?.name||'LOADING'} / {section.toUpperCase()}</div>
+   <header className="topbar"><div className="breadcrumb"><button type="button" className="breadcrumb-home" onClick={()=>chooseSection('units')} title="Return to the current faction's archive home">ARCHIVE</button><span aria-hidden="true"> / </span>{data?.name||'LOADING'} / {section.toUpperCase()}</div>
     <div className="toolbar"><span className="edition">EDITION XI</span>
      <button className="theme" onClick={()=>setTheme(theme==='dark'?'light':'dark')} title="Toggle Necron and Tomb Kings themes">
       {theme==='dark'?<Sun size={17}/>:<Moon size={17}/>} {theme==='dark'?'Tomb Kings':'Necron'}
@@ -178,7 +181,7 @@ function App(){
         {expanded[group]?<ChevronRight size={15}/>:<ChevronDown size={15}/>} {group}<small>{units.length}</small>
        </button>
        {!expanded[group]&&units.map(u=><button key={u.id} className={'item '+(selected===u.id?'chosen':'')} onClick={()=>choose(u.id)}>{u.name}</button>)}
-      </div>):activeBrowse.map(x=><button key={x.id||x.name} className={'item '+(selected===(x.id||x.name)?'chosen':'')} onClick={()=>choose(x.id||x.name)}>{x.name}</button>)}
+      </div>):activeBrowse.map(x=><button key={x.id||x.name} className={'item '+(selected===(x.id||x.name)?'chosen':'')} onClick={()=>choose(x.id||x.name)}>{section==='detachments'&&x.detachmentCost!=null?x.name+' ['+x.detachmentCost+' DP]':x.name}</button>)}
       {!activeBrowse.length&&<p className="empty">No matching records.</p>}
      </div>
     </div>
