@@ -542,6 +542,40 @@ for(const doc of docs){
   data.enhancements=unitEnhancements(x);
   return data;
  }),x=>norm(x.name)).sort((a,b)=>a.name.localeCompare(b.name));
+
+ // Resolve BSData Leading / Supporting associations to local faction datasheets.
+ // Association conditions contain eligible target selection IDs; unrelated roster
+ // restrictions are deliberately excluded.
+ const unitById=new Map(units.map(u=>[u.id,u]));
+ const unitByName=new Map(units.map(u=>[norm(u.name),u]));
+ const eligibleTargets=assoc=>{
+  const matched=[];
+  const visit=tree=>{
+   if(!tree||typeof tree!=='object')return;
+   if(tree.childId&&tree.field==='selections'&&['instanceOf','equalTo'].includes(tree.type)&&Number(tree.value)===1){
+    const target=unitById.get(tree.childId)||unitByName.get(norm(tree.childName||names.get(tree.childId)));
+    if(target)matched.push(target);
+   }
+   for(const x of [...list(tree.conditions),...list(tree.conditionGroups)])visit(x);
+  };
+  for(const x of [...list(assoc.conditions),...list(assoc.conditionGroups)])visit(x);
+  return unique(matched,x=>x.id);
+ };
+ for(const raw of candidate){
+  const node=resolve(raw),actor=unitById.get(node.id)||unitByName.get(norm(node.name));
+  if(!actor)continue;
+  for(const assoc of list(node.associations)){
+   const kind=/^leading$/i.test(assoc.name||'')?'leaders':/^support(ing)?$/i.test(assoc.name||'')?'supporters':null;
+   if(!kind)continue;
+   for(const target of eligibleTargets(assoc)){
+    if(target.id===actor.id)continue;
+    (target[kind]??=[]).push({id:actor.id,name:actor.name});
+   }
+  }
+ }
+ for(const unit of units)for(const kind of ['leaders','supporters']){
+  unit[kind]=unique(unit[kind]||[],x=>x.id).sort(alpha);
+ }
  for(const u of units)for(const e of u.enhancements)if(!allEnhancements.some(x=>norm(x.name)===norm(e.name)))allEnhancements.push(e);
  const detachments=detNodes.map(node=>{
   const x=readEntry(node,{enhance:true});
