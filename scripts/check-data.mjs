@@ -39,7 +39,7 @@ assert(core.rules.some(r=>r.name==='Assault'&&r.description.includes('**[ASSAULT
 assert(core.rules.some(r=>r.name==='Lance'&&r.description.includes('**[LANCE]**')),'Lance Markdown definition missing');
 for(const faction of index.factions){
  const data=get(faction.slug+'.json');
- assert(Array.isArray(data.units)&&Array.isArray(data.detachments)&&Array.isArray(data.references),'Malformed '+faction.slug);
+ assert(Array.isArray(data.units)&&Array.isArray(data.detachments)&&data.references && typeof data.references==='object','Malformed '+faction.slug);
  for(const u of data.units){
   assert(!(u.profiles||[]).some(p=>/Weapons?$/.test(p.type)),'Weapon incorrectly classified as ability: '+faction.slug+' '+u.name);
   assert(!(u.weapons||[]).some(w=>/weapon modifications/i.test(w.name)),'Crusade modifications leaked into weapons');
