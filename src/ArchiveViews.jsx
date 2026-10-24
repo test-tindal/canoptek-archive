@@ -4,7 +4,7 @@ import{createPortal}from'react-dom';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkBreaks from 'remark-breaks';
-import{Info,ExternalLink,X}from'lucide-react';
+import{Info,ExternalLink,X,Swords,Crosshair}from'lucide-react';
 
 const norm=s=>String(s||'').toLowerCase().replace(/[\[\]]/g,'').replace(/\s+/g,' ').trim();
 const idOf=x=>'archive-rule-'+encodeURIComponent(String(x.id||x.name));
@@ -69,7 +69,7 @@ export function WeaponSection({weapons,coreRules,open}){
     const fieldNames=['Range','A','BS','WS','S','AP','D','Keywords'];
     const columns=fieldNames.filter(k=>w.modes.some(m=>Object.hasOwn(m.fields,k)));
     return <article key={w.id+'-'+i} className={'weapon-card '+(multi?'multi-mode':'')}>
-     <div className="weapon-title"><span className="weapon-glyph" aria-hidden="true">{/ranged/i.test(type)?'🏹':'⚔'}</span><strong>{w.name}</strong>
+     <div className="weapon-title"><span className="weapon-glyph" aria-hidden="true">{/ranged/i.test(type)?<Crosshair size={23} strokeWidth={1.8}/>:<Swords size={23} strokeWidth={1.8}/>}</span><strong>{w.name}</strong>
        {multi&&<span className="mode-badge">SELECT ONE PROFILE</span>}</div>
      <div className="table-wrap"><table className="weapon-table"><thead><tr>{multi&&<th>MODE</th>}{columns.map(x=><th key={x}>{x}</th>)}</tr></thead>
        <tbody>{w.modes.map((m,j)=><tr key={m.id||j}>{multi&&<td className="mode-label">{normalizeMode(m.name)}</td>}{columns.map(col=><td key={col}>{col==='Keywords'?<KeywordValue value={m.fields[col]} coreRules={coreRules} open={open}/>:<RuleText text={String(m.fields[col]||'-')}/>}</td>)}</tr>)}</tbody>
