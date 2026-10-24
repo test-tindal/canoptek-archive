@@ -328,6 +328,33 @@ function readEntry(source,{enhance=false}={}){
   enhancements:[]
  };
 }
+
+function collectStratagems(source){
+ const found=[];
+ const parse=(name,values)=>{
+  const v=Object.fromEntries(Object.entries(values).map(([k,x])=>[norm(k).replace(/:$/,''),String(x||'')]));
+  const when=v.when||v.timing||'',target=v.target||v.targets||'',effect=v.effect||v.effects||'';
+  if(!when||!target||!effect)return;
+  found.push({id:name,name,when,target,effect,restrictions:v.restrictions||'',cp:v.cp||v.cost||''});
+ };
+ ownedWalk(source,n=>{
+  for(const p of list(n.profiles)){
+   if(/stratagem/i.test(p.typeName||'')||/stratagem/i.test(p.name||''))parse(p.name,fields(p));
+  }
+  // A complete explicit WHEN/TARGET/EFFECT card is safe to transcribe.
+  // Free-text references to stratagems are NOT enough.
+  for(const rule of list(n.rules)){
+   const description=String(rule.description||'');
+   if(!/WHEN:\s*/i.test(description)||!/TARGET:\s*/i.test(description)||!/EFFECT:\s*/i.test(description))continue;
+   const extract=label=>{
+    const after=description.split(new RegExp('(?:^|\\n)'+label+':\\s*','i'))[1];
+    return after?after.split(/\n(?:WHEN|TARGET|EFFECT|RESTRICTIONS):/i)[0].trim():'';
+   };
+   parse(rule.name,{WHEN:extract('WHEN'),TARGET:extract('TARGET'),EFFECT:extract('EFFECT'),RESTRICTIONS:extract('RESTRICTIONS')});
+  }
+ });
+ return unique(found,x=>x.name);
+}
 function detachmentEntries(root){
  const found=[];
  const visited=new Set();
@@ -417,7 +444,7 @@ for(const doc of docs){
   const x=readEntry(node,{enhance:true});
   x.rules=collectRules(node,true).rules;
   x.enhancements=allEnhancements.filter(e=>e.detachment?.id===node.id);
-  x.stratagems=[]; // BSData does not reliably supply WHEN / TARGET / EFFECT cards.
+  x.stratagems=collectStratagems(node); // Only verified structured WHEN/TARGET/EFFECT cards.
   return x;
  });
  const armyRules=unique([...list(root.sharedRules),...list(root.rules),...list(root.sharedProfiles)].map(r=>({
