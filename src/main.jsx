@@ -112,7 +112,7 @@ function App(){
    </div>
    <Profiles items={unit.profiles} coreRules={coreRules}/>
    <WeaponSection weapons={unit.weapons||[]} coreRules={coreRules} open={open}/>
-   <LoadoutSection choices={unit.weaponChoices||[]} loadouts={unit.loadouts||[]} navigate={navigate}/>
+   <LoadoutSection choices={unit.weaponChoices||[]} loadouts={unit.loadouts||[]} optionalGear={unit.optionalGear||[]} navigate={navigate}/>
    {unit.rules?.length>0&&<section className="panel"><h3>Unit abilities and rules</h3>
      <RuleCards items={unit.rules} coreRules={coreRules} navigate={navigate} references={data.references||{}} showLegends={showLegends}/>
    </section>}
