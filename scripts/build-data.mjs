@@ -129,7 +129,11 @@ function collectRules(source,includeUpgrade=false){
    if(unconditionalHide(raw))continue;
    const r=resolve(raw);
    const sourceIsUnit=['unit','model'].includes(resolve(source)?.type);
-   const owners=sourceIsUnit?scopedRuleOwnership.get(norm(r.name||raw.name))||[]:[];
+   const allOwners=sourceIsUnit?scopedRuleOwnership.get(norm(r.name||raw.name))||[]:[];
+   const owners=allOwners.filter(x=>x.available);
+   // A linked detachment ability belongs to a different chapter/catalogue.
+   // Its presence as an infoLink does not grant it to this unit.
+   if(allOwners.length&&!owners.length)continue;
    const description=r?.description||(r?.characteristics?Object.values(fields(r)).join('\n'):'')||owners[0]?.description||'';
    if(!description)continue;
    const appendedName=list(raw.modifiers).filter(m=>m.field==='name'&&m.type==='append'&&!m.conditions&&!m.conditionGroups).map(m=>String(m.value)).join(' ');
@@ -456,18 +460,18 @@ const factionData=[];
 for(const doc of docs){
  if(doc.system||doc.root.library)continue;
  const root=doc.root;
- const detNodes=unique(linkedCatalogueRoots(root).flatMap(x=>detachmentEntries(x))
-  .filter(x=>allowedInCatalogue(x,root.id)),x=>x.id);
+ const possibleDetachments=unique(linkedCatalogueRoots(root).flatMap(x=>detachmentEntries(x)),x=>x.id);
+ const detNodes=possibleDetachments.filter(x=>allowedInCatalogue(x,root.id));
  detachmentMap=new Map(detNodes.map(x=>[x.id,x.name]));
  scopedRuleOwnership=new Map();
- for(const det of detNodes){
+ for(const det of possibleDetachments){
   for(const raw of [...list(det.rules),...list(det.infoLinks).filter(x=>x.type==='rule')]){
    const rule=resolve(raw);
    const description=rule?.description||(rule?.characteristics?Object.values(fields(rule)).join('\n'):'');
    if(!rule?.name||!description||/^new rule$/i.test(rule.name))continue;
    const key=norm(rule.name);
    const owners=scopedRuleOwnership.get(key)||[];
-   if(!owners.some(x=>x.id===det.id))owners.push({id:det.id,name:det.name,description});
+   if(!owners.some(x=>x.id===det.id))owners.push({id:det.id,name:det.name,description,available:allowedInCatalogue(det,root.id)});
    scopedRuleOwnership.set(key,owners);
   }
  }
